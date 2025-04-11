@@ -2,11 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LineItem\StoreLineItemRequest;
+use App\Models\Bucket;
 use App\Models\LineItem;
+use App\Services\ActivityLogService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class LineItemController extends Controller
 {
+    protected ActivityLogService $activityLogService;
+    public function __construct(ActivityLogService $activityLogService)
+    {
+        $this->activityLogService = $activityLogService;
+        // $this->authorizeResource(LineItem::class, 'lineItem');
+    }
     /**
      * Display a listing of the resource.
      */
@@ -26,9 +36,26 @@ class LineItemController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreLineItemRequest $request, Bucket $bucket): RedirectResponse
     {
-        //
+        //Check if total percentage would exceed 100%
+        $currentTotal = $bucket->lineItems()->sum("percentage");
+        $newTotal = $currentTotal + $request->percentage;
+        if ($newTotal > 100) {
+            return redirect()->back()->withErrors([
+                'percentage' => 'The total percentage cannot exceed 100%.',
+            ]);
+        }
+        $lineItem = $bucket->lineItems()->create($request->validated());
+        // Log the activity
+        $this->activityLogService->log(
+            $request->user(),
+            $lineItem,
+            'created',
+            null,
+            $lineItem->toArray()
+        );
+        return back()->with('success', 'Line item created successfully.');
     }
 
     /**
@@ -52,7 +79,25 @@ class LineItemController extends Controller
      */
     public function update(Request $request, LineItem $lineItem)
     {
-        //
+        //Check if total percentage would exceed 100%
+        $currentTotal = $lineItem->bucket->lineItems()->where('id', '!=', $lineItem->id)->sum("percentage");
+        $newTotal = $currentTotal + $request->percentage;
+        if ($newTotal > 100) {
+            return redirect()->back()->withErrors([
+                'percentage' => 'The total percentage cannot exceed 100%.',
+            ]);
+        }
+        $oldValues = $lineItem->toArray();
+        $lineItem->update($request->validated());
+        // Log the activity
+        $this->activityLogService->log(
+            $request->user(),
+            $lineItem,
+            'updated',
+            $oldValues,
+            $lineItem->toArray()
+        );
+        return back()->with('success', 'Line item updated successfully.');
     }
 
     /**

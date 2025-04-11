@@ -2,11 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Bucket\StoreBucketRequest;
+use App\Http\Requests\Bucket\UpdateBucketRequest;
 use App\Models\Bucket;
+use App\Services\ActivityLogService;
+use App\Services\BudgetService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class BucketController extends Controller
 {
+
+    protected ActivityLogService $activityLogService;
+    protected BudgetService $budgetService;
+
+    public function __construct(BudgetService $budgetService,
+    ActivityLogService $activityLogService)
+    {
+        $this->budgetService = $budgetService;
+        $this->activityLogService = $activityLogService;
+        // $this->authorizeResource(Bucket::class, 'bucket');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -26,9 +43,27 @@ class BucketController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreBucketRequest $request): RedirectResponse
     {
-        //
+        //Check if total percentage would exceed 100%
+        $currentTotal = $request->user()->teamBuckets()->sum("percentage");
+        $newTotal = $currentTotal + $request->percentage;
+        if ($newTotal > 100) {
+            return redirect()->back()->withErrors([
+                'percentage' => 'The total percentage cannot exceed 100%.',
+            ]);
+        }
+        $bucket = $request->user()->teamBuckets()->create($request->validated());
+        // Log the activity
+        $this->activityLogService->log(
+            $request->user(),
+            $bucket,
+            'created',
+            null,
+            $bucket->toArray()
+        );
+
+        return back()->with('success','Bucket created successfully');
     }
 
     /**
@@ -50,16 +85,45 @@ class BucketController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Bucket $bucket)
+    public function update(UpdateBucketRequest $request, Bucket $bucket)
     {
-        //
+        //check if total percentage would exceed 100%
+        $currentTotal = $request->user()->teamBuckets()->where('id', '!=', $bucket->id)->sum("percentage");
+        $newTotal = $currentTotal + $request->percentage;
+        if ($newTotal > 100) {
+            return redirect()->back()->withErrors([
+                'percentage' => 'The total percentage cannot exceed 100%.',
+            ]);
+        }
+        $oldValues = $bucket->toArray();
+        $bucket->update($request->validated());
+
+        // Log the activity
+        $this->activityLogService->log(
+            $request->user(),
+            $bucket,
+            'updated',
+            $oldValues,
+            $bucket->toArray()
+        );
+        return back()->with('success','Bucket updated successfully');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Bucket $bucket)
+    public function destroy(Request $request, Bucket $bucket)
     {
-        //
+        $oldValues = $bucket->toArray();
+        $bucket->delete();
+        // Log the activity
+        $this->activityLogService->log(
+            $request->user(),
+            $bucket,
+            'deleted',
+            $oldValues,
+            null
+        );
+        return back()->with('success','Bucket deleted successfully');
     }
 }

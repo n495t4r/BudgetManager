@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('line_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('bucket_id')->constrained()->onDelete('cascade');
+            $table->string('title');
+            $table->decimal('percentage', 5, 2);
             $table->timestamps();
         });
     }

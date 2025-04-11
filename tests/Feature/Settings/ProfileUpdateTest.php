@@ -17,9 +17,11 @@ test('profile page is displayed', function () {
 test('profile information can be updated', function () {
     $user = User::factory()->create();
 
+    $this->get('/login'); // Initialize session if needed
     $response = $this
         ->actingAs($user)
         ->patch('/settings/profile', [
+            '_token' => session('_token'),
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
@@ -37,10 +39,11 @@ test('profile information can be updated', function () {
 
 test('email verification status is unchanged when the email address is unchanged', function () {
     $user = User::factory()->create();
-
+    $this->get('/login'); // Initialize session if needed
     $response = $this
         ->actingAs($user)
         ->patch('/settings/profile', [
+            '_token' => session('_token'),
             'name' => 'Test User',
             'email' => $user->email,
         ]);
@@ -54,10 +57,11 @@ test('email verification status is unchanged when the email address is unchanged
 
 test('user can delete their account', function () {
     $user = User::factory()->create();
-
+    $this->get('/login'); // Initialize session if needed
     $response = $this
         ->actingAs($user)
         ->delete('/settings/profile', [
+            '_token' => session('_token'),
             'password' => 'password',
         ]);
 
@@ -71,11 +75,12 @@ test('user can delete their account', function () {
 
 test('correct password must be provided to delete account', function () {
     $user = User::factory()->create();
-
+    $this->get('/login'); // Initialize session if needed
     $response = $this
         ->actingAs($user)
         ->from('/settings/profile')
         ->delete('/settings/profile', [
+            '_token' => session('_token'),
             'password' => 'wrong-password',
         ]);
 

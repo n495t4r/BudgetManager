@@ -13,9 +13,11 @@ test('confirm password screen can be rendered', function () {
 });
 
 test('password can be confirmed', function () {
+    $this->get('/login'); // Initialize session if needed
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post('/confirm-password', [
+        '_token' => session('_token'),
         'password' => 'password',
     ]);
 
@@ -24,9 +26,11 @@ test('password can be confirmed', function () {
 });
 
 test('password is not confirmed with invalid password', function () {
+    $this->get('/login'); // Initialize session if needed
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post('/confirm-password', [
+        '_token' => session('_token'),
         'password' => 'wrong-password',
     ]);
 

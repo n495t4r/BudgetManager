@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
+            $table->morphs('loggable');
+            $table->string('action');
+            $table->json('old_values')->nullable();
+            $table->json('new_values')->nullable();
             $table->timestamps();
         });
     }

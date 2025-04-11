@@ -9,7 +9,10 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
+    $this->get('/login'); // Initialize session if needed
+
     $response = $this->post('/register', [
+        '_token' => session('_token'),
         'name' => 'Test User',
         'email' => 'test@example.com',
         'password' => 'password',

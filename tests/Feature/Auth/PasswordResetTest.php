@@ -15,9 +15,12 @@ test('reset password link screen can be rendered', function () {
 test('reset password link can be requested', function () {
     Notification::fake();
 
+    $this->get('/login'); // Initialize session if needed
     $user = User::factory()->create();
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    $this->post('/forgot-password', ['email' => $user->email,
+        '_token' => session('_token'),
+    ]);
 
     Notification::assertSentTo($user, ResetPassword::class);
 });
@@ -25,9 +28,12 @@ test('reset password link can be requested', function () {
 test('reset password screen can be rendered', function () {
     Notification::fake();
 
+    $this->get('/login'); // Initialize session if needed
     $user = User::factory()->create();
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    $this->post('/forgot-password', ['email' => $user->email,
+        '_token' => session('_token'),
+    ]);
 
     Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
         $response = $this->get('/reset-password/'.$notification->token);
@@ -41,12 +47,17 @@ test('reset password screen can be rendered', function () {
 test('password can be reset with valid token', function () {
     Notification::fake();
 
+    $this->get('/login'); // Initialize session if needed
     $user = User::factory()->create();
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    $this->post('/forgot-password', ['email' => $user->email,
+        '_token' => session('_token'),
+    ]);
 
     Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+        $this->get('/login'); // Initialize session if needed
         $response = $this->post('/reset-password', [
+            '_token' => session('_token'),
             'token' => $notification->token,
             'email' => $user->email,
             'password' => 'password',
