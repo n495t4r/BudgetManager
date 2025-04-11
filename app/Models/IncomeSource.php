@@ -11,11 +11,11 @@ class IncomeSource extends Model
     use HasFactory;
 
     protected $fillable = [
+        'budget_plan_id',
         'user_id',
         'name',
         'amount',
         'is_active',
-        'month_year',
         'team_id',
     ];
     /**
@@ -27,7 +27,6 @@ class IncomeSource extends Model
      protected $casts = [
         'amount' => 'decimal:2',
         'is_active' => 'boolean',
-        'month_year' => 'date',
     ];
 
     public function user(): BelongsTo
@@ -38,5 +37,9 @@ class IncomeSource extends Model
     public function team()
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function plan() {
+        return $this->belongsTo(BudgetPlan::class, 'budget_plan_id');
     }
 }

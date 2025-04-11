@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Bucket\StoreBucketRequest;
 use App\Http\Requests\Bucket\UpdateBucketRequest;
 use App\Models\Bucket;
+use App\Models\BudgetPlan;
 use App\Services\ActivityLogService;
 use App\Services\BudgetService;
 use Illuminate\Http\RedirectResponse;
@@ -43,7 +44,7 @@ class BucketController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBucketRequest $request): RedirectResponse
+    public function store(StoreBucketRequest $request, BudgetPlan $budgetPlan): RedirectResponse
     {
         //Check if total percentage would exceed 100%
         $currentTotal = $request->user()->teamBuckets()->sum("percentage");
@@ -53,9 +54,15 @@ class BucketController extends Controller
                 'percentage' => 'The total percentage cannot exceed 100%.',
             ]);
         }
-        $bucket = $request->user()->teamBuckets()->create($request->validated());
+        // $bucket = $request->user()->teamBuckets()->create($request->validated());
+        $bucket = $budgetPlan->buckets()->create([
+            'team_id' => $request->user()->team_id,
+            'user_id' => $request->user()->id,
+            ...$request->only('title','percentage')]);
+
         // Log the activity
         $this->activityLogService->log(
+            null,
             $request->user(),
             $bucket,
             'created',
@@ -100,6 +107,7 @@ class BucketController extends Controller
 
         // Log the activity
         $this->activityLogService->log(
+            null,
             $request->user(),
             $bucket,
             'updated',
@@ -118,6 +126,7 @@ class BucketController extends Controller
         $bucket->delete();
         // Log the activity
         $this->activityLogService->log(
+            null,
             $request->user(),
             $bucket,
             'deleted',

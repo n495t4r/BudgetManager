@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('buckets', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('team_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('budget_plan_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->decimal('percentage', 5, 2);
             $table->timestamps();

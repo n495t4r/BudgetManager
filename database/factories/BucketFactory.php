@@ -19,25 +19,25 @@ class BucketFactory extends Factory
         ];
     }
 
-    public function configure()
-    {
-        return $this->afterMaking(function (Bucket $bucket) {
-            // After making, if team_id is set and user_id is not, then set user_id from team's owner
-            if ($bucket->team_id && !$bucket->user_id) {
-                $team = Team::find($bucket->team_id);
-                if ($team) {
-                    $bucket->user_id = $team->owner_id;
-                }
-            }
-        })->afterCreating(function (Bucket $bucket) {
-            // In case it wasn't set during making, do it after creation and persist the change
-            if ($bucket->team_id && !$bucket->user_id) {
-                $team = Team::find($bucket->team_id);
-                if ($team) {
-                    $bucket->user_id = $team->owner_id;
-                    $bucket->save();
-                }
-            }
-        });
-    }
+    // public function configure()
+    // {
+    //     return $this->afterMaking(function (Bucket $bucket) {
+    //         // After making, if team_id is set and user_id is not, then set user_id from team's owner
+    //         if ($bucket->team_id && !$bucket->user_id) {
+    //             $team = Team::find($bucket->team_id);
+    //             if ($team) {
+    //                 $bucket->user_id = $team->owner_id;
+    //             }
+    //         }
+    //     })->afterCreating(function (Bucket $bucket) {
+    //         // In case it wasn't set during making, do it after creation and persist the change
+    //         if ($bucket->team_id && !$bucket->user_id) {
+    //             $team = Team::find($bucket->team_id);
+    //             if ($team) {
+    //                 $bucket->user_id = $team->owner_id;
+    //                 $bucket->save();
+    //             }
+    //         }
+    //     });
+    // }
 }

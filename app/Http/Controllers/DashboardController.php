@@ -32,10 +32,14 @@ class DashboardController extends Controller
          : Carbon::now();
 
      // Get dashboard data
-     $dashboardData = $this->budgetService->getDashboardData($request->user(), $from, $to);
+    //  $dashboardData = $this->budgetService->getDashboardData($request->user(), $from, $to);
+
+        // Get the date range for the dashboard
+        $rangeData = $this->budgetService->getRangeData($request->user(), $from, $to);
 
      return Inertia::render('dashboard', [
-         'dashboardData' => $dashboardData,
+        //  'dashboardData' => $dashboardData,
+         'rangeData' => $rangeData,
          'currency' => '₦',
      ]);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\IncomeSource\StoreIncomeSourceRequest;
 use App\Http\Requests\IncomeSource\UpdateIncomeSourceRequest;
+use App\Models\BudgetPlan;
 use App\Models\IncomeSource;
 use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,7 @@ class IncomeSourceController extends Controller
     /**
      * Display a listing of the resource.
      */
-     public function index(Request $request): Response
+    public function index(Request $request): Response
     {
         $incomeSources = $request->user()->incomeSources();
         $incomeSources2 = $request->incomeSources();
@@ -49,8 +50,16 @@ class IncomeSourceController extends Controller
     public function store(StoreIncomeSourceRequest $request): RedirectResponse
     {
 
+        $teamId = $request->user()->team_id;
+        $period = now()->format('Y-m');
+        $plan = BudgetPlan::firstOrCreate(
+            ['team_id' => $teamId, 'period' => $period]
+        );
+
+
         $incomeSource = $request->user()->incomeSources()->create([
-            'team_id' => $request->user()->team_id,
+            'team_id' => $teamId,
+            'budget_plan_id' => $plan->id,
             ...$request->validated() // merge other validated fields
         ]);
 
@@ -64,7 +73,7 @@ class IncomeSourceController extends Controller
             $incomeSource->toArray()
         );
 
-        return back()->with('success', 'Income source created successfully');
+        return back()->with('success', 'Income recorded');
     }
 
     /**

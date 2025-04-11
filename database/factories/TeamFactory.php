@@ -23,16 +23,16 @@ class TeamFactory extends Factory
         ];
     }
 
-    public function configure()
-    {
-        return $this->afterCreating(function (Team $team) {
-            // Check if the team has any users
-            if ($team->users()->exists()) {
-                // Select one user at random from the team's users
-                $owner = $team->users()->inRandomOrder()->first();
-                // Update the team with the selected owner_id
-                $team->update(['owner_id' => $owner->id]);
-            }
-        });
-    }
+    // public function configure()
+    // {
+    //     return $this->afterCreating(function (Team $team) {
+    //         // Check if the team has any users
+    //         if ($team->users()->exists()) {
+    //             // Select one user at random from the team's users
+    //             $owner = $team->users()->inRandomOrder()->first();
+    //             // Update the team with the selected owner_id
+    //             $team->update(['owner_id' => $owner->id]);
+    //         }
+    //     });
+    // }
 }

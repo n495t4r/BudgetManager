@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expense\UpdateExpenseRequest;
+use App\Models\BudgetPlan;
 use App\Models\Expense;
 use App\Services\ActivityLogService;
 use App\Services\BudgetService;
@@ -18,8 +19,7 @@ class ExpenseController extends Controller
     public function __construct(
         BudgetService $budgetService,
         ActivityLogService $activityLogService
-    )
-    {
+    ) {
         $this->bucketLogService = $budgetService;
         $this->activityLogService = $activityLogService;
         // $this->authorizeResource(Expense::class, 'expense');
@@ -46,17 +46,29 @@ class ExpenseController extends Controller
      */
     public function store(StoreExpenseRequest $request): RedirectResponse
     {
-        $expense = $request->user()->team()->expenses()->create($request->validated());
+        $teamId = $request->user()->team_id;
+        $period = $request->date->format('Y-m');
+        $plan = BudgetPlan::firstOrCreate(
+            ['team_id' => $teamId, 'period' => $period]
+        );
+
+        $data = $request->validated() + [
+            'budget_plan_id'            => $plan->id,
+            'line_item_id'  => $request->line_item_id,
+        ];
+
+        $expense = $request->user()->team()->expenses()->create($data);
 
         // Log the activity
         $this->activityLogService->log(
+            null,
             $request->user(),
             $expense,
             'created',
             null,
             $expense->toArray()
         );
-        return back()->with('success', 'Expense created successfully.');
+        return back()->with('success', 'Expense recorded');
     }
 
     /**
@@ -84,6 +96,7 @@ class ExpenseController extends Controller
         $expense->update($request->validated());
         // Log the activity
         $this->activityLogService->log(
+            null,
             $request->user(),
             $expense,
             'updated',
@@ -96,12 +109,13 @@ class ExpenseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, Expense $expense):RedirectResponse
+    public function destroy(Request $request, Expense $expense): RedirectResponse
     {
         $oldValues = $expense->toArray();
         $expense->delete();
         // Log the activity
         $this->activityLogService->log(
+            null,
             $request->user(),
             $expense,
             'deleted',

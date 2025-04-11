@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BucketController;
+use App\Http\Controllers\BudgetPlanController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IncomeSourceController;
@@ -24,6 +25,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     //Team
     Route::resource('teams', TeamController::class)
         ->except(['index', 'show', 'create', 'edit']);
+
+    // Budget Plans
+    Route::resource('budget-plans', BudgetPlanController::class);
+
     //Income Sources
     Route::resource('income-sources', IncomeSourceController::class);
     // ->except(['show', 'create', 'edit']);

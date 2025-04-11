@@ -24,9 +24,24 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        // Define name as 'Francis Onah' email as onahfa@gmail.com for the first user
+        // and generate a random name and email for the rest.
+
+        static $isFirstUser = true;
+
+        if ($isFirstUser) {
+            $name = 'Francis Onah';
+            $email = 'onahfa@gmail.com';
+            $isFirstUser = false;
+        } else {
+            // Generate a random name and email for all other users
+            $name = fake()->name();
+            $email = fake()->unique()->safeEmail();
+        }
+
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'name' => $name,
+            'email' => $email,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),

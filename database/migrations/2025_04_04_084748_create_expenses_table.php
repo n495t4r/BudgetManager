@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('team_id')->constrained()->onDelete('cascade');
+            $table->foreignId('budget_plan_id')->nullable()->constrained('budget_plans')->onDelete('set null');
             $table->foreignId('line_item_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2);
             $table->date('date');

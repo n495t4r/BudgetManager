@@ -1,14 +1,19 @@
-import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
-import { type BreadcrumbItem } from '@/types';
-import { type ReactNode } from 'react';
+import type React from "react"
+import { AppSidebar } from "@/components/app-sidebar"
+import { MobileNav } from "@/components/mobile-nav"
 
 interface AppLayoutProps {
-    children: ReactNode;
-    breadcrumbs?: BreadcrumbItem[];
+  children: React.ReactNode
 }
 
-export default ({ children, breadcrumbs, ...props }: AppLayoutProps) => (
-    <AppLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
-        {children}
-    </AppLayoutTemplate>
-);
+export default function AppLayout({ children }: AppLayoutProps) {
+  return (
+    <div className="flex h-screen">
+      <AppSidebar />
+      <main className="flex-1 overflow-auto">
+        <div className="container mx-auto max-w-4xl">{children}</div>
+      </main>
+      <MobileNav />
+    </div>
+  )
+}

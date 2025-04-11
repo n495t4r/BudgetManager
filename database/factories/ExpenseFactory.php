@@ -24,39 +24,39 @@ class ExpenseFactory extends Factory
         ];
     }
 
-    public function configure()
-    {
-        return $this->afterMaking(function (Expense $expense) {
-            if (!$expense->line_item_id && $expense->team_id) {
-                // Try to find a bucket that belongs to the same team
-                $bucket = \App\Models\Bucket::where('team_id', $expense->team_id)->inRandomOrder()->first();
-                if ($bucket) {
-                    // Try to get a random line item from the bucket
-                    $lineItem = $bucket->lineItems()->inRandomOrder()->first();
-                    if (!$lineItem) {
-                        // Create a new line item for the bucket if none exists
-                        $lineItem = LineItem::factory()->create(['bucket_id' => $bucket->id]);
-                    }
-                    $expense->line_item_id = $lineItem->id;
-                } else {
-                    // If no bucket exists for this team, create one and a line item
-                    $bucket = \App\Models\Bucket::factory()->create(['team_id' => $expense->team_id]);
-                    $lineItem = LineItem::factory()->create(['bucket_id' => $bucket->id]);
-                    $expense->line_item_id = $lineItem->id;
-                }
-            }
-        })->afterCreating(function (Expense $expense) {
-            if (!$expense->line_item_id && $expense->team_id) {
-                $bucket = \App\Models\Bucket::where('team_id', $expense->team_id)->inRandomOrder()->first();
-                if ($bucket) {
-                    $lineItem = $bucket->lineItems()->inRandomOrder()->first();
-                    if (!$lineItem) {
-                        $lineItem = LineItem::factory()->create(['bucket_id' => $bucket->id]);
-                    }
-                    $expense->line_item_id = $lineItem->id;
-                    $expense->save();
-                }
-            }
-        });
-    }
+    // public function configure()
+    // {
+    //     return $this->afterMaking(function (Expense $expense) {
+    //         if (!$expense->line_item_id && $expense->team_id) {
+    //             // Try to find a bucket that belongs to the same team
+    //             $bucket = \App\Models\Bucket::where('team_id', $expense->team_id)->inRandomOrder()->first();
+    //             if ($bucket) {
+    //                 // Try to get a random line item from the bucket
+    //                 $lineItem = $bucket->lineItems()->inRandomOrder()->first();
+    //                 if (!$lineItem) {
+    //                     // Create a new line item for the bucket if none exists
+    //                     $lineItem = LineItem::factory()->create(['bucket_id' => $bucket->id]);
+    //                 }
+    //                 $expense->line_item_id = $lineItem->id;
+    //             } else {
+    //                 // If no bucket exists for this team, create one and a line item
+    //                 $bucket = \App\Models\Bucket::factory()->create(['team_id' => $expense->team_id]);
+    //                 $lineItem = LineItem::factory()->create(['bucket_id' => $bucket->id]);
+    //                 $expense->line_item_id = $lineItem->id;
+    //             }
+    //         }
+    //     })->afterCreating(function (Expense $expense) {
+    //         if (!$expense->line_item_id && $expense->team_id) {
+    //             $bucket = \App\Models\Bucket::where('team_id', $expense->team_id)->inRandomOrder()->first();
+    //             if ($bucket) {
+    //                 $lineItem = $bucket->lineItems()->inRandomOrder()->first();
+    //                 if (!$lineItem) {
+    //                     $lineItem = LineItem::factory()->create(['bucket_id' => $bucket->id]);
+    //                 }
+    //                 $expense->line_item_id = $lineItem->id;
+    //                 $expense->save();
+    //             }
+    //         }
+    //     });
+    // }
 }

@@ -2,12 +2,130 @@
 
 namespace App\Services;
 
+use App\Models\BudgetPlan;
+use App\Models\Expense;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class BudgetService
 {
+
+    public function getRangeData(User $u, Carbon $from, Carbon $to): array
+    {
+        $teamId = $u->team_id;
+        $fromP = $from->format('Y-m');
+        $toP = $to->format('Y-m');
+
+        // 1) Fetch all plans in the range
+        $plans = BudgetPlan::where('team_id', $teamId)
+            ->whereBetween('period', [$fromP, $toP])
+            ->with('buckets.lineItems.expenses')
+            ->get();
+
+        // 2) Total income & expenses in range
+        $totalIncome = $u->teamIncomeSources()
+            ->where('budget_plan_id', $plans->pluck('id'))
+            ->sum('amount');
+        $totalExpenses = $u->teamExpenses()
+            ->where('budget_plan_id', $plans->pluck('id'))
+            ->sum('amount');
+
+        // 3) Build bucket + line‑item summaries
+        $buckets = [];
+        foreach ($plans as $plan) {
+            foreach ($plan->buckets as $pb) {
+                $bucketKey = $pb->id;
+                // Planned for this bucket (uses totalIncome for all months)
+                $bucketAmount = $totalIncome * ($pb->percentage / 100);
+
+                // Build line‑items for this bucket
+                $lineItems = [];
+                foreach ($pb->lineItems as $pli) {
+                    // Sum expenses on this line‑item in date range
+                    $spent = $pli->expenses
+                        ->whereBetween('date', [$from, $to])
+                        ->sum('amount');
+
+                    $liAmount = $bucketAmount * ($pli->percentage / 100);
+                    $liRemaining = $liAmount - $spent;
+
+                    $lineItems[] = [
+                        'id' => $pli->id,
+                        'title' => $pli->title,
+                        'percentage' => (float) $pli->percentage,
+                        'amount' => (float) $liAmount,
+                        'spent' => (float) $spent,
+                        'remaining' => (float) $liRemaining,
+                    ];
+                }
+
+                // Sum spent across line‑items
+                $bucketSpent = array_sum(array_column($lineItems, 'spent'));
+                $bucketRemaining = $bucketAmount - $bucketSpent;
+
+                // Initialize or accumulate
+                if (!isset($buckets[$bucketKey])) {
+                    $buckets[$bucketKey] = [
+                        'id' => $pb->id,
+                        'title' => $pb->title,
+                        'percentage' => (float) $pb->percentage,
+                        'amount' => 0.0,
+                        'spent' => 0.0,
+                        'remaining' => 0.0,
+                        'lineItems' => [],
+                    ];
+                }
+
+                // Accumulate across multiple plans
+                $buckets[$bucketKey]['amount'] += $bucketAmount;
+                $buckets[$bucketKey]['spent'] += $bucketSpent;
+                $buckets[$bucketKey]['remaining'] += $bucketRemaining;
+                // Merge line‑items
+                $buckets[$bucketKey]['lineItems'] = array_merge(
+                    $buckets[$bucketKey]['lineItems'],
+                    $lineItems
+                );
+            }
+        }
+
+        // Reindex buckets
+        $buckets = array_values($buckets);
+
+        // 4) Fetch all expenses in range, with relationships
+        $expenses = Expense::with('lineItem.bucket')
+            ->where('team_id', $teamId)
+            ->whereBetween('date', [$from, $to])
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function (Expense $e) {
+                return [
+                    'id' => $e->id,
+                    'date' => $e->date->toDateString(),
+                    'description' => $e->description,
+                    'amount' => (float) $e->amount,
+                    'bucket' => $e->lineItem->bucket->title,
+                    'lineItem' => $e->lineItem->title,
+                ];
+            });
+
+        // 5) Recent 5 expenses
+        $recentExpenses = $expenses->take(5)->values();
+
+        // 6) Monthly data (income vs expense)
+        $monthlyData = $this->getMonthlyData($u, $from, $to, $totalIncome);
+
+        return [
+            'totalIncome' => (float) $totalIncome,
+            'totalExpenses' => (float) $totalExpenses,
+            'remainingBalance' => (float) ($totalIncome - $totalExpenses),
+            'buckets' => $buckets,
+            'recentExpenses' => $recentExpenses,
+            'expenses' => $expenses,
+            'monthlyData' => $monthlyData,
+        ];
+    }
+
     public function getDashboardData(
         User $user,
         Carbon $from,

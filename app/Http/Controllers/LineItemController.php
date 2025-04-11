@@ -49,6 +49,7 @@ class LineItemController extends Controller
         $lineItem = $bucket->lineItems()->create($request->validated());
         // Log the activity
         $this->activityLogService->log(
+            null,
             $request->user(),
             $lineItem,
             'created',
@@ -91,6 +92,7 @@ class LineItemController extends Controller
         $lineItem->update($request->validated());
         // Log the activity
         $this->activityLogService->log(
+            null,
             $request->user(),
             $lineItem,
             'updated',

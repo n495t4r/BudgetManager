@@ -13,9 +13,9 @@ class Bucket extends Model
 
     protected $fillable = [
         'user_id',
+        'budget_plan_id',
         'title',
         'percentage',
-        'team_id',
     ];
     /**
      * The attributes that should be cast.
@@ -27,13 +27,13 @@ class Bucket extends Model
         'percentage' => 'decimal:2',
     ];
 
-    public function team()
-    {
-        return $this->belongsTo(Team::class);
-    }
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function plan() {
+        return $this->belongsTo(BudgetPlan::class, 'budget_plan_id');
     }
 
     public function lineItems(): HasMany
