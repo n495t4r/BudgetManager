@@ -31,14 +31,18 @@ export function MobileNav() {
     {
       label: "Reports",
       icon: PieChart,
-      href: route("reports"),
-      active: isActive(route("reports")),
+    //   href: route("reports"),
+      href: "#",
+      active: isActive(route("dashboard")),
+    //   active: isActive(route("reports")),
     },
     {
       label: "Settings",
       icon: Settings,
-      href: route("settings"),
-      active: isActive(route("settings")),
+      href: "#",
+    //   href: route("settings"),
+    active: isActive(route("dashboard")),
+    //   active: isActive(route("settings")),
     },
   ]
 

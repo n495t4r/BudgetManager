@@ -23,7 +23,7 @@ export default defineConfig({
         },
     },
     server: {
-        host: '10.20.4.117', // Change this to your local IP
+        host: '10.20.3.138', // Change this to your local IP
         port: 5175, // Or any other port Vite is running on
         strictPort: true,
         watch: {

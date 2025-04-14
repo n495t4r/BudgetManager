@@ -63,16 +63,18 @@ interface DashboardData {
 }
 
 interface Props {
-  dashboardData: DashboardData
+  rangeData: DashboardData
   currency: string
 }
 
-export default function DashboardPage({ dashboardData, currency = "$" }: Props) {
+export default function DashboardPage({ rangeData, currency = "$" }: Props) {
   // Initialize date range from URL parameters or default to current month
   const searchParams = new URLSearchParams(window.location.search)
   const fromParam = searchParams.get("from")
   const toParam = searchParams.get("to")
 
+
+  console.log(rangeData);
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
     let fromDate: Date
     try {
@@ -129,7 +131,7 @@ export default function DashboardPage({ dashboardData, currency = "$" }: Props) 
         {
           preserveState: true,
           preserveScroll: true,
-          only: ["dashboardData"],
+          only: ["rangeData"],
         },
       )
 
@@ -191,9 +193,10 @@ export default function DashboardPage({ dashboardData, currency = "$" }: Props) 
 
         {/* Finance Summary Cards */}
         <FinanceSummary
-          totalIncome={dashboardData.totalIncome}
-          totalExpenses={dashboardData.totalExpenses}
-          remainingBalance={dashboardData.remainingBalance}
+
+          totalIncome={rangeData.totalIncome}
+          totalExpenses={rangeData.totalExpenses}
+          remainingBalance={rangeData.remainingBalance}
           currency={currency}
         />
 
@@ -207,10 +210,10 @@ export default function DashboardPage({ dashboardData, currency = "$" }: Props) 
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4 mt-4">
-              <MonthlyChart data={dashboardData.monthlyData} currency={currency} />
+              <MonthlyChart data={rangeData.monthlyData} currency={currency} />
               <ExpensesList
                 title="Recent Expenses"
-                expenses={dashboardData.recentExpenses}
+                expenses={rangeData.recentExpenses}
                 currency={currency}
                 onEdit={(expense) => {
                   setCurrentExpense(expense)
@@ -220,13 +223,13 @@ export default function DashboardPage({ dashboardData, currency = "$" }: Props) 
             </TabsContent>
 
             <TabsContent value="buckets" className="mt-4">
-              <BudgetOverview buckets={dashboardData.buckets} currency={currency} />
+              <BudgetOverview buckets={rangeData.buckets} currency={currency} />
             </TabsContent>
 
             <TabsContent value="expenses" className="mt-4">
               <ExpensesList
                 title="All Expenses"
-                expenses={dashboardData.expenses}
+                expenses={rangeData.expenses}
                 currency={currency}
                 showAll
                 onEdit={(expense) => {
@@ -243,7 +246,7 @@ export default function DashboardPage({ dashboardData, currency = "$" }: Props) 
           open={isFormOpen}
           onOpenChange={setIsFormOpen}
           expense={currentExpense as any}
-          buckets={dashboardData.buckets as any}
+          buckets={rangeData.buckets as any}
           currency={currency}
           onSuccess={handleFormSuccess}
         />
