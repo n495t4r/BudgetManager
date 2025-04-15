@@ -17,31 +17,31 @@ export function MobileNav() {
       href: route("dashboard"),
       active: isActive(route("dashboard")),
     },
-    {
-      label: "Add",
-      icon: PlusCircle,
-      href: "#",
-      onClick: () => {
-        // This will be handled by the modal in the dashboard
-        const event = new CustomEvent("open-expense-form")
-        window.dispatchEvent(event)
-      },
-      active: false,
-    },
-    {
-      label: "Reports",
-      icon: PieChart,
-    //   href: route("reports"),
-      href: "#",
-      active: isActive(route("dashboard")),
-    //   active: isActive(route("reports")),
-    },
+    // {
+    //   label: "Add",
+    //   icon: PlusCircle,
+    //   href: "#",
+    //   onClick: () => {
+    //     // This will be handled by the modal in the dashboard
+    //     const event = new CustomEvent("open-expense-form")
+    //     window.dispatchEvent(event)
+    //   },
+    //   active: false,
+    // },
+    // {
+    //   label: "Reports",
+    //   icon: PieChart,
+    // //   href: route("reports"),
+    //   href: "#",
+    //   active: isActive(route("dashboard")),
+    // //   active: isActive(route("reports")),
+    // },
     {
       label: "Settings",
       icon: Settings,
-      href: "#",
+      href: "settings",
     //   href: route("settings"),
-    active: isActive(route("dashboard")),
+    active: isActive(route("settings")),
     //   active: isActive(route("settings")),
     },
   ]

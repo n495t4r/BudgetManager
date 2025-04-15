@@ -23,8 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class,'index'])->name('dashboard');
 
     //Team
-    Route::resource('teams', TeamController::class)
-        ->except(['index', 'show', 'create', 'edit']);
+    Route::resource('settings/teams', TeamController::class);
 
     // Budget Plans
     Route::resource('budget-plans', BudgetPlanController::class);

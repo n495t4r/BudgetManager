@@ -22,14 +22,16 @@ const breadcrumbs: BreadcrumbItem[] = [
 type ProfileForm = {
     name: string;
     email: string;
+    team_id: number;
 }
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, teams } = usePage<SharedData>().props;
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
         name: auth.user.name,
         email: auth.user.email,
+        team_id: auth.user.team_id ?? 0,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -78,8 +80,29 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 autoComplete="username"
                                 placeholder="Email address"
                             />
-
                             <InputError className="mt-2" message={errors.email} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="team_id">Select Team</Label>
+
+                            <select
+                                id="team_id"
+                                value={data.team_id}
+                                onChange={(e) => setData('team_id', parseInt(e.target.value))}
+                                required
+                                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <option value="" disabled>
+                                    -- Choose a Team --
+                                </option>
+                                {teams.map((team: { id: number; name: string }) => (
+                                    <option key={team.id} value={team.id}>
+                                        {team.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <InputError className="mt-2" message={errors.team_id} />
                         </div>
 
                         {mustVerifyEmail && auth.user.email_verified_at === null && (

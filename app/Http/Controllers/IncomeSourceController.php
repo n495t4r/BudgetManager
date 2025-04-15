@@ -49,7 +49,7 @@ class IncomeSourceController extends Controller
      */
     public function store(StoreIncomeSourceRequest $request): RedirectResponse
     {
-
+        dd($request->all());
         $teamId = $request->user()->team_id;
         $period = now()->format('Y-m');
         $plan = BudgetPlan::firstOrCreate(

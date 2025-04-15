@@ -85,7 +85,7 @@ export function ExpensesList({ title = "Expenses", expenses, currency, showAll =
 
   if (expenses.length === 0) {
     return (
-      <Card>
+        <Card className="min-h-[200px] flex items-center justify-center">
         <CardHeader>
           <CardTitle className="text-base">{title}</CardTitle>
         </CardHeader>
@@ -97,12 +97,12 @@ export function ExpensesList({ title = "Expenses", expenses, currency, showAll =
   }
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="divide-y">
+        <div className="divide-y max-h-[400px] overflow-y-auto">
           {displayExpenses.map((expense) => (
             <div key={expense.id} className="p-4 flex items-center">
               <div className="flex-1 min-w-0">

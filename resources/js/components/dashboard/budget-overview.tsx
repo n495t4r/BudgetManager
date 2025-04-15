@@ -59,7 +59,7 @@ export function BudgetOverview({ buckets, currency }: BudgetOverviewProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
       {buckets.map((bucket) => {
         const isExpanded = expandedBuckets[bucket.id] || false
         const percentSpent = calculatePercentSpent(bucket.spent, bucket.amount)

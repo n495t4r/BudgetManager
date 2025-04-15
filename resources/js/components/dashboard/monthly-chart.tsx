@@ -19,13 +19,14 @@ export function MonthlyChart({ data, currency }: MonthlyChartProps) {
   const formatCurrency = (value: number) => `${currency}${value.toFixed(2)}`
 
   return (
-    <Card>
+
+    <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Monthly Overview</CardTitle>
         <CardDescription>Income vs expenses over time</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="h-[200px] sm:h-[300px]">
+      <CardContent className="p-0 pt-2">
+        <div className="h-[300px] md:h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />

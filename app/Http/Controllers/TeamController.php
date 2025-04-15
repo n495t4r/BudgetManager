@@ -6,6 +6,7 @@ use App\Models\Team;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class TeamController extends Controller
 {
@@ -14,6 +15,28 @@ class TeamController extends Controller
     public function __construct(ActivityLogService $activityLogService)
     {
         $this->activityLogService = $activityLogService;
+    }
+
+    public function index()
+    {
+        // $teams = auth()->user()->teamOwner()->get();
+        $teams =Team::all();
+        return Inertia::render("settings/teams", [
+            "teams"=> $teams,
+        ]);
+    }
+    public function create()
+    {
+        return view('settings.teams.create');
+    }
+    public function edit(Team $team)
+    {
+        // Ensure the authenticated user belongs to the team
+        if (auth()->user()->userTeam->id !== $team->id) {
+            return back()->with('error', 'You are not allowed to edit this team');
+        }
+
+        return view('settings.teams.edit', compact('team'));
     }
     //
     public function store(Request $request)

@@ -157,3 +157,31 @@
         @apply bg-background text-foreground;
     }
 }
+
+@layer components {
+    .tab-content-wrapper{
+        position: relative;
+        height: 70vh;
+        min-height: 500px;
+        max-height: 800px;
+        /* width: 100%; */
+    }
+
+    /* For mobile devices */
+    @media (max-width: 768px) {
+        .tab-content-wrapper{
+            height: calc(100vh - 220px);
+            max-height: 400PX;
+        }
+    }
+
+     /* For desktop devices */
+  @media (min-width: 1024px) {
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+}

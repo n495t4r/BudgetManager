@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Requests\Expense;
+
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreExpenseRequest extends FormRequest
@@ -19,4 +21,15 @@ class StoreExpenseRequest extends FormRequest
             'description' => 'required|string|max:255',
         ];
     }
+
+    // In StoreExpenseRequest.php
+    protected function prepareForValidation()
+    {
+        if ($this->has('date')) {
+            $this->merge([
+                'date' => Carbon::parse($this->input('date')),
+            ]);
+        }
+    }
+
 }

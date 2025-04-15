@@ -53,11 +53,12 @@ class ExpenseController extends Controller
         );
 
         $data = $request->validated() + [
-            'budget_plan_id'            => $plan->id,
-            'line_item_id'  => $request->line_item_id,
+            'budget_plan_id' => $plan->id,
+            'line_item_id' => $request->line_item_id,
+            'team_id' => $teamId,
         ];
 
-        $expense = $request->user()->team()->expenses()->create($data);
+        $expense = $request->user()->expenses()->create($data);
 
         // Log the activity
         $this->activityLogService->log(
