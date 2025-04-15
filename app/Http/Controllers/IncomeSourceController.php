@@ -49,17 +49,19 @@ class IncomeSourceController extends Controller
      */
     public function store(StoreIncomeSourceRequest $request): RedirectResponse
     {
-        dd($request->all());
+
         $teamId = $request->user()->team_id;
         $period = now()->format('Y-m');
+        $month_year = now()->format('Y-m-d');
         $plan = BudgetPlan::firstOrCreate(
             ['team_id' => $teamId, 'period' => $period]
         );
 
-
+        // dd($plan);
         $incomeSource = $request->user()->incomeSources()->create([
             'team_id' => $teamId,
             'budget_plan_id' => $plan->id,
+            'month_year'=> $month_year,
             ...$request->validated() // merge other validated fields
         ]);
 

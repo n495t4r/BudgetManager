@@ -46,8 +46,15 @@ class BucketController extends Controller
      */
     public function store(StoreBucketRequest $request, BudgetPlan $budgetPlan): RedirectResponse
     {
+        $teamId = $request->user()->team_id;
+        $period = now()->format('Y-m');
+        $plan = BudgetPlan::firstOrCreate(
+            ['team_id' => $teamId, 'period' => $period]
+        );
+
+        // dd($plan);
         //Check if total percentage would exceed 100%
-        $currentTotal = $request->user()->teamBuckets()->sum("percentage");
+        $currentTotal = $plan->sum("percentage");
         $newTotal = $currentTotal + $request->percentage;
         if ($newTotal > 100) {
             return redirect()->back()->withErrors([
@@ -55,10 +62,11 @@ class BucketController extends Controller
             ]);
         }
         // $bucket = $request->user()->teamBuckets()->create($request->validated());
-        $bucket = $budgetPlan->buckets()->create([
-            'team_id' => $request->user()->team_id,
-            'user_id' => $request->user()->id,
-            ...$request->only('title','percentage')]);
+        $bucket = $plan->buckets()->create([
+            // 'team_id' => $request->user()->team_id,
+            // 'user_id' => $request->user()->id,
+            // 'budget_plan_id' => $plan->id,
+            ...$request->validated() ]);
 
         // Log the activity
         $this->activityLogService->log(
