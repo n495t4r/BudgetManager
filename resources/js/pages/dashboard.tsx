@@ -1,22 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DateRangePicker } from "@/components/date-range-picker"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Filter, DollarSign, CreditCard, PieChart } from "lucide-react"
+import { PlusCircle, DollarSign, CreditCard, PieChart } from "lucide-react"
 import AppLayout from "@/layouts/app-layout"
 import { router, usePage } from "@inertiajs/react"
-import { format } from "date-fns"
+import { format, startOfMonth } from "date-fns"
 import { FinanceSummary } from "@/components/dashboard/finance-summary"
 import { ExpensesList } from "@/components/dashboard/expenses-list"
+import { IncomeSources } from "@/components/dashboard/incomesources"
 import { BudgetOverview } from "@/components/dashboard/budget-overview"
 import { MonthlyChart } from "@/components/dashboard/monthly-chart"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { EmptyState } from "@/components/empty-state"
 import ExpenseForm from "@/pages/expenses/expenseform"
 import IncomeForm from "@/pages/income/incomeform"
 import BucketForm from "@/pages/bucket/bucketform"
+import { DateRangeFilter } from "@/components/date-range-filter"
 
 // Define interfaces based on the provided structure
 interface LineItemSummary {
@@ -53,6 +53,7 @@ interface IncomeSource {
     id: number
     name: string
     amount: number
+    month_year: string
     is_active: boolean
 }
 
@@ -70,7 +71,7 @@ interface DashboardData {
     recentExpenses: ExpenseRecord[]
     expenses: ExpenseRecord[]
     monthlyData: MonthlyDataPoint[]
-    incomeSources?: IncomeSource[]
+    incomeSources: IncomeSource[]
 }
 
 interface Props {
@@ -97,28 +98,40 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
     const toParam = searchParams.get("to")
 
     const { props } = usePage();
-    console.log(props);
+    // console.log(props);
 
     console.log(rangeData);
+
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
-        let fromDate: Date
-        try {
-            fromDate = fromParam ? new Date(fromParam) : new Date(new Date().setDate(1))
-            if (isNaN(fromDate.getTime())) {
-                fromDate = new Date(new Date().setDate(1))
+        // Default to current month
+        const defaultFrom = startOfMonth(new Date())
+        const defaultTo = new Date()
+
+        // Try to parse from URL params if available
+        let fromDate = defaultFrom
+        let toDate = defaultTo
+
+        if (fromParam) {
+            try {
+                const parsedDate = new Date(fromParam)
+                if (!isNaN(parsedDate.getTime())) {
+                    fromDate = parsedDate
+                }
+            } catch (e) {
+                console.error("Invalid from date:", fromParam)
             }
-        } catch (e) {
-            fromDate = new Date(new Date().setDate(1))
+
         }
 
-        let toDate: Date
-        try {
-            toDate = toParam ? new Date(toParam) : new Date()
-            if (isNaN(toDate.getTime())) {
-                toDate = new Date()
+        if (toParam) {
+            try {
+                const parsedDate = new Date(toParam)
+                if (!isNaN(parsedDate.getTime())) {
+                    toDate = parsedDate
+                }
+            } catch (e) {
+                console.error("Invalid to date:", toParam)
             }
-        } catch (e) {
-            toDate = new Date()
         }
 
         return { from: fromDate, to: toDate }
@@ -131,43 +144,26 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
     const [currentExpense, setCurrentExpense] = useState<ExpenseRecord | undefined>(undefined)
     const [currentIncomeSource, setCurrentIncomeSource] = useState<IncomeSource | undefined>(undefined)
     const [currentBucket, setCurrentBucket] = useState<BucketSummary | undefined>(undefined)
-    const [isDateRangeApplied, setIsDateRangeApplied] = useState(false)
-    const [isFilterOpen, setIsFilterOpen] = useState(false)
 
-    // Handle date range change
-    const handleDateRangeChange = (newDateRange: { from: Date; to: Date }) => {
+    // Handle applying the date filter
+    const handleApplyFilter = (newDateRange: { from: Date; to: Date }) => {
+        // Update local state
         setDateRange(newDateRange)
-        setIsDateRangeApplied(true)
-        setIsFilterOpen(false)
+
+        const from = format(newDateRange.from, "yyyy-MM-dd")
+        const to = format(newDateRange.to, "yyyy-MM-dd")
+
+        // Make request to server with new date range
+        router.get(
+            "",
+            { from, to },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ["rangeData"],
+            },
+        )
     }
-
-    // Apply date filter when date range changes
-    useEffect(() => {
-        if (isDateRangeApplied) {
-            // Validate dates before formatting
-            const fromDate =
-                dateRange.from && !isNaN(dateRange.from.getTime()) ? dateRange.from : new Date(new Date().setDate(1))
-
-            const toDate = dateRange.to && !isNaN(dateRange.to.getTime()) ? dateRange.to : new Date()
-
-            // Format dates for the API request
-            const from = format(fromDate, "yyyy-MM-dd")
-            const to = format(toDate, "yyyy-MM-dd")
-
-            // Make request to server with new date range
-            router.get(
-                "",
-                { from, to },
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    only: ["rangeData"],
-                },
-            )
-
-            setIsDateRangeApplied(false)
-        }
-    }, [dateRange, isDateRangeApplied])
 
     // Handle tab change
     const handleTabChange = (value: string) => {
@@ -232,19 +228,8 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
         })
     }
 
-    // Format date range for display
-    const formatDateRange = () => {
-        if (!dateRange.from || !dateRange.to) return ""
-
-        try {
-            return `${format(dateRange.from, "MMM d")} - ${format(dateRange.to, "MMM d, yyyy")}`
-        } catch (e) {
-            return "Invalid date range"
-        }
-    }
-
     // Check if data is empty
-    const isDataEmpty = safeData.buckets.length === 0 && safeData.expenses.length === 0 && safeData.totalIncome === 0
+    const isDataEmpty = safeData.buckets.length === 0 && safeData.expenses.length === 0 && safeData.totalIncome === 0 && safeData.incomeSources.length === 0
 
     return (
         <AppLayout>
@@ -254,20 +239,15 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
                     <div className="flex items-center justify-between p-4">
                         <h1 className="text-xl font-semibold tracking-tight">Budget Dashboard</h1>
                         <div className="flex items-center space-x-2">
-                            <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                                <SheetTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-8 gap-1">
-                                        <Filter className="h-3.5 w-3.5" />
-                                        <span className="hidden sm:inline">Filter</span>
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent side="top" className="w-full sm:max-w-lg mx-auto">
-                                    <div className="py-6">
-                                        <h3 className="text-lg font-medium mb-4">Select Date Range</h3>
-                                        <DateRangePicker date={dateRange} setDate={handleDateRangeChange} />
-                                    </div>
-                                </SheetContent>
-                            </Sheet>
+                            {/* New DateRangeFilter component */}
+                            <DateRangeFilter
+                                dateRange={dateRange}
+                                onApplyFilter={handleApplyFilter}
+                                buttonVariant="outline"
+                                buttonSize="sm"
+                                buttonClassName="h-8"
+                                triggerLabel="Filter"
+                            />
 
                             <Button size="sm" className="h-8 gap-1" onClick={handleAddButtonClick}>
                                 {getAddButtonIcon()}
@@ -275,7 +255,7 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
                             </Button>
                         </div>
                     </div>
-                    <div className="px-4 pb-2 text-sm text-muted-foreground">{formatDateRange()}</div>
+
                 </div>
                 {isDataEmpty ? (
                     <EmptyState
@@ -324,7 +304,15 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
                                                     <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
                                                         <div className="lg:col-span-2">
 
-                                                            <MonthlyChart data={safeData.monthlyData} currency={currency} />
+                                                            <IncomeSources
+                                                                title="Income Sources"
+                                                                incomeSources={safeData.incomeSources}
+                                                                currency={currency}
+                                                                onEdit={(incomeSource) => {
+                                                                    setCurrentIncomeSource(incomeSource)
+                                                                    setIsIncomeFormOpen(true)
+                                                                }}
+                                                            />
                                                         </div>
                                                         <div className="lg:col-span-2">
 
@@ -338,13 +326,16 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
                                                                 }}
                                                             />
                                                         </div>
+                                                        <div className="lg:col-span-2">
+
+                                                            <MonthlyChart data={safeData.monthlyData} currency={currency} />
+                                                        </div>
                                                     </div>
                                                 ) : (
                                                     <EmptyState
                                                         title="No data for this period"
                                                         description="Try selecting a different date range or add some transactions."
-                                                        icon={<Filter className="h-10 w-10 text-muted-foreground" />}
-                                                    />
+                                                        icon={<PieChart className="h-10 w-10 text-muted-foreground" />}                                                    />
                                                 )}
                                             </div>
                                         </TabsContent>

@@ -18,6 +18,14 @@ export function MonthlyChart({ data, currency }: MonthlyChartProps) {
   // Format currency for tooltip
   const formatCurrency = (value: number) => `${currency}${value.toFixed(2)}`
 
+const formatAmount = (amount: number) => {
+    return `${currency}${new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(amount)}`
+}
+
+  console.log("MonthlyChart data", data)
   return (
 
     <Card className="overflow-hidden">
@@ -33,7 +41,7 @@ export function MonthlyChart({ data, currency }: MonthlyChartProps) {
               <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${currency}${value}`} />
               <Tooltip
-                formatter={(value: number) => [formatCurrency(value), ""]}
+                formatter={(value: number) => [formatAmount(value), ""]}
                 labelFormatter={(label) => `Month: ${label}`}
                 contentStyle={{ fontSize: "12px" }}
               />

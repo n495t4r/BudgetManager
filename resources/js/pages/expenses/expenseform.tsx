@@ -105,7 +105,6 @@ export default function ExpenseForm({
         description: expense?.description || "",
       }
 
-      console.log("Initializing form with:", formData)
       reset(formData)
       formInitialized.current = true
 
@@ -162,6 +161,20 @@ export default function ExpenseForm({
       toast(
         isEditing ? "Expense updated successfully!" : "Expense created successfully!",
       )
+
+      // Reset the form completely after successful submission
+      setData({
+        id: 0,
+        date: format(new Date(), "yyyy-MM-dd"),
+        bucket_id: "",
+        line_item_id: "",
+        amount: "",
+        description: "",
+      })
+
+      // Reset line items
+      setLineItems([])
+
       formInitialized.current = false
       onOpenChange(false)
       onSuccess()
@@ -187,15 +200,6 @@ export default function ExpenseForm({
     if (!open) {
       // Reset initialization state when closing
       formInitialized.current = false
-      // Reset form when closing
-      reset({
-        id: 0,
-        date: format(new Date(), "yyyy-MM-dd"),
-        bucket_id: "",
-        line_item_id: "",
-        amount: "",
-        description: "",
-      })
     }
     onOpenChange(open)
   }

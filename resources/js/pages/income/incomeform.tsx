@@ -49,6 +49,9 @@ export default function IncomeForm({ open, onOpenChange, incomeSource, currency 
             toast(
                 isEditing ? "Income source updated successfully!" : "Income source added successfully!",
             )
+            // Reset the form completely after successful submission
+            reset()
+
             onOpenChange(false)
             onSuccess()
         }
@@ -70,7 +73,7 @@ export default function IncomeForm({ open, onOpenChange, incomeSource, currency 
     const handleOpenChange = (open: boolean) => {
         if (!open) {
             // Reset form when closing
-            reset()
+            // reset()
         }
         onOpenChange(open)
     }

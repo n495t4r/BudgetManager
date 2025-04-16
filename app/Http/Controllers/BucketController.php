@@ -52,7 +52,6 @@ class BucketController extends Controller
             ['team_id' => $teamId, 'period' => $period]
         );
 
-        // dd($plan);
         //Check if total percentage would exceed 100%
         $currentTotal = $plan->sum("percentage");
         $newTotal = $currentTotal + $request->percentage;
@@ -61,12 +60,18 @@ class BucketController extends Controller
                 'percentage' => 'The total percentage cannot exceed 100%.',
             ]);
         }
-        // $bucket = $request->user()->teamBuckets()->create($request->validated());
+
         $bucket = $plan->buckets()->create([
             // 'team_id' => $request->user()->team_id,
             // 'user_id' => $request->user()->id,
             // 'budget_plan_id' => $plan->id,
-            ...$request->validated() ]);
+            ...$request->only([
+                'title',
+                'percentage',
+                ])
+            ]);
+
+        $bucket->lineItems()->createMany($request->line_items);
 
         // Log the activity
         $this->activityLogService->log(

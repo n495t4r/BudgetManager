@@ -111,7 +111,7 @@ export function BudgetOverview({ buckets, currency }: BudgetOverviewProps) {
 
             {isExpanded && (
               <CardContent className="p-0">
-                <div className="divide-y bg-muted/30">
+                <div className="divide-y bg-neutral-500">
                   {bucket.lineItems.map((item) => {
                     const itemPercentSpent = calculatePercentSpent(item.spent, item.amount)
 

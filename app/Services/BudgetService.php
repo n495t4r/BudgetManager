@@ -22,13 +22,17 @@ class BudgetService
             ->whereBetween('period', [$fromP, $toP])
             ->with('buckets.lineItems.expenses')
             ->get();
+        //income sources
+        $incomeSources = $u->teamIncomeSources()
+            ->whereIn('budget_plan_id', $plans->pluck('id'))
+            ->get();
 
-        // 2) Total income & expenses in range
-        $totalIncome = $u->teamIncomeSources()
-            ->where('budget_plan_id', $plans->pluck('id'))
+            // 2) Total income & expenses in range
+        $totalIncome = $incomeSources
             ->sum('amount');
+
         $totalExpenses = $u->teamExpenses()
-            ->where('budget_plan_id', $plans->pluck('id'))
+            ->whereIn('budget_plan_id', $plans->pluck('id'))
             ->sum('amount');
 
         // 3) Build bucket + line‑item summaries
@@ -44,7 +48,6 @@ class BudgetService
                 foreach ($pb->lineItems as $pli) {
                     // Sum expenses on this line‑item in date range
                     $spent = $pli->expenses
-                        ->whereBetween('date', [$from, $to])
                         ->sum('amount');
 
                     $liAmount = $bucketAmount * ($pli->percentage / 100);
@@ -95,7 +98,7 @@ class BudgetService
         // 4) Fetch all expenses in range, with relationships
         $expenses = Expense::with('lineItem.bucket')
             ->where('team_id', $teamId)
-            ->whereBetween('date', [$from, $to])
+            ->whereIn('budget_plan_id', $plans->pluck('id'))
             ->orderBy('date', 'desc')
             ->get()
             ->map(function (Expense $e) {
@@ -113,7 +116,7 @@ class BudgetService
         $recentExpenses = $expenses->take(5)->values();
 
         // 6) Monthly data (income vs expense)
-        $monthlyData = $this->getMonthlyData($u, $from, $to, $totalIncome);
+        $monthlyData = $this->getMonthlyData($u,  $plans);
 
         return [
             'totalIncome' => (float) $totalIncome,
@@ -123,6 +126,7 @@ class BudgetService
             'recentExpenses' => $recentExpenses,
             'expenses' => $expenses,
             'monthlyData' => $monthlyData,
+            'incomeSources' => $incomeSources,
         ];
     }
 
@@ -201,30 +205,28 @@ class BudgetService
     /**
      * Get monthly income and expense data for charts
      */
-    private function getMonthlyData(User $user, Carbon $from, Carbon $to, $totalIncome): Collection
+    private function getMonthlyData(User $user, Collection $plans): Collection
     {
-        $months = collect();
-        $currentDate = $from->copy()->startOfMonth();
-        $endDate = $to->copy()->endOfMonth();
+        return $plans->map(function ($plan) use ($user) {
+            // Ensure the period is a Carbon instance
+            $month = Carbon::parse($plan->period)->startOfMonth();
 
-        while ($currentDate->lte($endDate)) {
-            $monthStart = $currentDate->copy()->startOfMonth();
-            $monthEnd = $currentDate->copy()->endOfMonth();
-
+            // Sum team expenses for this month
             $monthlyExpenses = $user->teamExpenses()
-                ->whereBetween('date', [$monthStart, $monthEnd])
+            ->where('budget_plan_id', $plan->id)
+            ->sum('amount');
+
+            // Sum total income for this plan (if income is tied to plan)
+            $monthlyTotalIncome = $user->teamIncomeSources()
+                ->where('budget_plan_id', $plan->id)
                 ->sum('amount');
 
-            $months->push([
-                'name' => $currentDate->format('M'),
-                'income' => $totalIncome,
+            return [
+                'name' => $month->format('M'),
+                'income' => $monthlyTotalIncome,
                 'expenses' => $monthlyExpenses,
-            ]);
-
-            $currentDate->addMonth();
-        }
-
-        return $months;
+            ];
+        });
     }
 
     /**

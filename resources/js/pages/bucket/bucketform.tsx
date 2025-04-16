@@ -111,6 +111,8 @@ export default function BucketForm({ open, onOpenChange, bucket, onSuccess }: Bu
     const onSuccessCallback = () => {
       toast(isEditing ? "Budget bucket updated successfully!" : "Budget bucket added successfully!",
       )
+        // Reset the form completely after successful submission
+        reset()
       onOpenChange(false)
       onSuccess()
     }
@@ -128,13 +130,18 @@ export default function BucketForm({ open, onOpenChange, bucket, onSuccess }: Bu
     }
   }
 
+   // Update form data when line items change
+   useEffect(() => {
+    setData("line_items", lineItems)
+  }, [lineItems])
+
   // Handle dialog close
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       // Reset form when closing
-      reset()
-      setLineItems([{ title: "", percentage: 0 }])
-      setLineItemsError("")
+    //   reset()
+    //   setLineItems([{ title: "", percentage: 0 }])
+    //   setLineItemsError("")
     }
     onOpenChange(open)
   }

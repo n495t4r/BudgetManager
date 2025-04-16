@@ -15,6 +15,7 @@ class StoreBucketRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'percentage' => 'required|numeric|min:0|max:100',
+            'line_items' => 'array',
         ];
     }
 }
