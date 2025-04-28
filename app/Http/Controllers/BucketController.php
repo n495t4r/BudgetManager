@@ -53,7 +53,7 @@ class BucketController extends Controller
         );
 
         //Check if total percentage would exceed 100%
-        $currentTotal = $plan->sum("percentage");
+        $currentTotal = $plan->buckets()->sum("percentage");
         $newTotal = $currentTotal + $request->percentage;
         if ($newTotal > 100) {
             return redirect()->back()->withErrors([
