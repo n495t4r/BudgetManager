@@ -6,6 +6,7 @@ use App\Models\Team;
 use App\Services\DailyPrayerChain;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
 
@@ -39,19 +40,24 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $tz = $request->cookie('user_tz') ?: 'UTC';
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-        $dailyPrayerList = DailyPrayerChain::getPrayersForSession();
-        // dd($request);
+        $dailyPrayerList = DailyPrayerChain::getPrayersForSession($tz);
+
+        // dd($dailyPrayerList);
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'dailyPrayerChain' => $dailyPrayerList,
+            'allPrayersLazy' => DailyPrayerChain::getAllPrayers($tz),
+            'userTz' => $tz,
             'auth' => [
                 'user' => $request->user(),
             ],
             'teams' => $request->user() ? Team::all() : null,
-            'ziggy' => fn (): array => [
+            'ziggy' => fn(): array => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],

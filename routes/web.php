@@ -18,6 +18,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::get('dashboard', function () {
     //     return Inertia::render('dashboard');
     // })->name('dashboard');
+    Route::get('/prayer-chain', function () {
+        return Inertia::render('prayer/dailyprayerchain');
+    })->name('prayer-chain');
 
     //Dashboard
     Route::get('/dashboard', [DashboardController::class,'index'])->name('dashboard');

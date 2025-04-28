@@ -4,40 +4,93 @@ namespace App\Services;
 
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class DailyPrayerChain
 {
-    public static function getCurrentSession(): string
+    /**
+     * Determine the current session based on timezone.
+     */
+    public static function getCurrentSession(string $timezone = 'UTC'): string
     {
-        $now = Carbon::now();
+        $now = Carbon::now($timezone);
 
-        if ($now->between(Carbon::createFromTime(1, 0), Carbon::createFromTime(11, 59, 59))) {
+        if ($now->between(Carbon::createFromTime(1, 0, 0, $timezone), Carbon::createFromTime(11, 59, 59, $timezone))) {
             return 'morning';
         }
 
-        if ($now->between(Carbon::createFromTime(12, 0), Carbon::createFromTime(16, 59, 59))) {
+        if ($now->between(Carbon::createFromTime(12, 0, 0, $timezone), Carbon::createFromTime(16, 59, 59, $timezone))) {
             return 'afternoon';
         }
 
-        return 'evening'; // 5 PM onward
+        return 'evening';
     }
 
-    public static function getPrayersForSession(): array
+    /**
+     * Get the prayers for the current session, cached per day.
+     */
+    public static function getPrayersForSession(string $timezone = 'UTC'): array
     {
-        $session = static::getCurrentSession();
+        $session = static::getCurrentSession($timezone);
+        $cacheKey = static::buildCacheKey($session, $timezone);
+
+        return Cache::remember($cacheKey, static::secondsUntilMidnight($timezone), function () use ($session) {
+            return static::generateSessionPrayers($session);
+        });
+    }
+
+    /**
+     * Get all prayers (morning, afternoon, evening) for the day, cached.
+     */
+    public static function getAllPrayers(string $timezone = 'UTC'): array
+    {
+        $cacheKey = static::buildCacheKey('all', $timezone);
+
+        return Cache::remember($cacheKey, static::secondsUntilMidnight($timezone), function () {
+            return [
+                'morning' => static::generateSessionPrayers('morning'),
+                'afternoon' => static::generateSessionPrayers('afternoon'),
+                'evening' => static::generateSessionPrayers('evening'),
+            ];
+        });
+    }
+
+    /**
+     * Build a unique cache key per date + session + timezone.
+     */
+    protected static function buildCacheKey(string $session, string $timezone): string
+    {
+        return sprintf('daily_prayers:%s:%s:%s', now($timezone)->toDateString(), $session, $timezone);
+    }
+
+    /**
+     * Calculate seconds until midnight in a timezone.
+     */
+    protected static function secondsUntilMidnight(string $timezone): int
+    {
+        $now = Carbon::now($timezone);
+        $midnight = $now->copy()->endOfDay()->addSecond();
+        return $now->diffInSeconds($midnight);
+    }
+
+    /**
+     * Randomly select one prayer per category for a given session.
+     */
+    protected static function generateSessionPrayers(string $session): array
+    {
+
+        // dd(''. $session .'');
         $prayers = static::prayers();
         $result = [];
 
         foreach ($prayers as $category => $sessions) {
             if (isset($sessions[$session])) {
-                $prayer = collect($sessions[$session])->random();
-                $result[] = [
-                    'category' => ucfirst($category),
-                    'session' => ucfirst($session),
-                    'title' => $prayer['title'] ?? null,
-                    'scripture' => $prayer['scripture'] ?? null,
-                    'decree' => $prayer['decree'] ?? null,
-                    'prayer' => $prayer['prayer'] ?? null,
+                $randomPrayer = collect($sessions[$session])->random();
+                $result[ucfirst($category)] = [
+                    'title' => $randomPrayer['title'] ?? null,
+                    'scripture' => $randomPrayer['scripture'] ?? null,
+                    'decree' => $randomPrayer['decree'] ?? null,
+                    'prayer' => $randomPrayer['prayer'] ?? null,
                 ];
             }
         }
@@ -45,6 +98,10 @@ class DailyPrayerChain
         return $result;
     }
 
+
+    /**
+     * Define all the prayers data collection.
+     */
     public static function prayers(): Collection
     {
         return collect([
