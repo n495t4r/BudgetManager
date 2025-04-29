@@ -32,6 +32,13 @@ class DailyPrayerChain
     public static function getPrayersForSession(string $timezone = 'UTC'): array
     {
         $session = static::getCurrentSession($timezone);
+
+        return static::getAllPrayers($timezone)[$session];
+    }
+
+    public static function getPrayersForSession2(string $timezone = 'UTC'): array
+    {
+        $session = static::getCurrentSession($timezone);
         $cacheKey = static::buildCacheKey($session, $timezone);
 
         return Cache::remember($cacheKey, static::secondsUntilMidnight($timezone), function () use ($session) {

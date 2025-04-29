@@ -40,11 +40,9 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $tz = $request->cookie('user_tz') ?: 'UTC';
+        $tz = $request->cookie('user_tz') ?: 'Africa/Lagos';
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
         $dailyPrayerList = DailyPrayerChain::getPrayersForSession($tz);
-
-        // dd($dailyPrayerList);
 
         return [
             ...parent::share($request),
@@ -53,6 +51,7 @@ class HandleInertiaRequests extends Middleware
             'dailyPrayerChain' => $dailyPrayerList,
             'allPrayersLazy' => DailyPrayerChain::getAllPrayers($tz),
             'userTz' => $tz,
+            'prayerSession' => DailyPrayerChain::getCurrentSession($tz),
             'auth' => [
                 'user' => $request->user(),
             ],
