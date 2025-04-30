@@ -62,9 +62,6 @@ class BucketController extends Controller
         }
 
         $bucket = $plan->buckets()->create([
-            // 'team_id' => $request->user()->team_id,
-            // 'user_id' => $request->user()->id,
-            // 'budget_plan_id' => $plan->id,
             ...$request->only([
                 'title',
                 'percentage',

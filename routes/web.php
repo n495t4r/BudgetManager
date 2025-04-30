@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Budget Plans
     Route::resource('budget-plans', BudgetPlanController::class);
+    Route::post('budget-plans/rollover', [BudgetPlanController::class, 'rollover'])->name('budget-plans.rollover');
 
     //Income Sources
     Route::resource('income-sources', IncomeSourceController::class);

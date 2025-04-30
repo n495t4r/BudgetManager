@@ -446,7 +446,7 @@ class DailyPrayerChain
                     ],
                     [
                         'title' => 'Warfare Prayer 3',
-                        'prayer' => 'Every covenant of early death, every altar of tragedy raised against our destinies — be shattered by the fire in the MIGHT NAME OF JESUS!',
+                        'prayer' => 'Every covenant of early death, every altar of tragedy raised against our destinies — be shattered by fire in the MIGHT NAME OF JESUS!',
                     ],
                     [
                         'title' => 'Warfare Prayer 4',

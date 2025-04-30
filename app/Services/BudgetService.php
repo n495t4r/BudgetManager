@@ -22,6 +22,7 @@ class BudgetService
             ->whereBetween('period', [$fromP, $toP])
             ->with('buckets.lineItems.expenses')
             ->get();
+
         //income sources
         $incomeSources = $u->teamIncomeSources()
             ->whereIn('budget_plan_id', $plans->pluck('id'))

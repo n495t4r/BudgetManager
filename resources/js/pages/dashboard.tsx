@@ -17,6 +17,8 @@ import ExpenseForm from "@/pages/expenses/expenseform"
 import IncomeForm from "@/pages/income/incomeform"
 import BucketForm from "@/pages/bucket/bucketform"
 import { DateRangeFilter } from "@/components/date-range-filter"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog"
 
 // Define interfaces based on the provided structure
 interface LineItemSummary {
@@ -77,9 +79,16 @@ interface DashboardData {
 interface Props {
     rangeData?: DashboardData
     currency?: string
+    currentPeriod?: string
+    suggestRollover?: boolean
+    hasBudgetPlan?: boolean
+    previousPlanId?: number
 }
 
-export default function DashboardPage({ rangeData, currency = "$" }: Props) {
+export default function DashboardPage({
+    rangeData, currency = "$",
+    currentPeriod, suggestRollover = false, hasBudgetPlan = false, previousPlanId
+}: Props) {
     // Provide default values if dashboardData is undefined
     const safeData: DashboardData = rangeData || {
         totalIncome: 0,
@@ -98,9 +107,12 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
     const toParam = searchParams.get("to")
 
     const { props } = usePage();
-    // console.log(props);
 
-    console.log(rangeData);
+    console.log('Props:', props);
+    console.log(currentPeriod);
+    console.log('Suggest Rollover: ', suggestRollover);
+    console.log('hasBudgetPlan:', hasBudgetPlan);
+    console.log('Previous plan ID', previousPlanId);
 
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
         // Default to current month
@@ -160,7 +172,7 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
             {
                 preserveState: true,
                 preserveScroll: true,
-                only: ["rangeData"],
+                only: ["rangeData", "suggestRollover", "hasBudgetPlan"],
             },
         )
     }
@@ -231,6 +243,60 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
     // Check if data is empty
     const isDataEmpty = safeData.buckets.length === 0 && safeData.expenses.length === 0 && safeData.totalIncome === 0 && safeData.incomeSources.length === 0
 
+    // Handle rollover action with confirmation using AlertDialog
+
+    const [isRolloverDialogOpen, setIsRolloverDialogOpen] = useState(false)
+
+    const handleRolloverButtonClick = () => {
+        setIsRolloverDialogOpen(true)
+    }
+
+    // Format date range
+    const period = format(dateRange.from, "yyyy-MM")
+
+    const handleRollover = () => {
+        router.post(
+            route("budget-plans.rollover"),
+            {period},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Refresh the page data after rollover
+                    router.reload({
+                        only: ["rangeData", "suggestRollover", "hasBudgetPlan"],
+                        preserveScroll: true,
+                    })
+                },
+            },
+        )
+    }
+
+    const RolloverConfirmationDialog = () => (
+        <AlertDialog open={isRolloverDialogOpen} onOpenChange={setIsRolloverDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Rollover</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to roll over your budget structure?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <Button variant="outline" onClick={() => setIsRolloverDialogOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button onClick={() => {
+                        setIsRolloverDialogOpen(false)
+                        handleRollover()
+                    }}>
+                        Confirm
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    )
+
+
+
     return (
         <AppLayout>
             <div className="flex flex-col pb-20 md:pb-0">
@@ -257,6 +323,22 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
                     </div>
 
                 </div>
+                {/* Rollover suggestion alert */}
+                {suggestRollover && (
+                    <Alert className="my-4">
+                        <AlertTitle>No budget plan for {currentPeriod}</AlertTitle>
+                        <AlertDescription className="flex items-center justify-between">
+                            <span>Would you like to roll over your budget structure from the previous month?</span>
+                            <div className="flex gap-2 mt-2">
+                                <Button size="sm" onClick={handleRolloverButtonClick}>
+                                    Roll Over
+                                </Button>
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+
+                )}
+
                 {isDataEmpty ? (
                     <EmptyState
                         title="No budget data yet"
@@ -335,7 +417,7 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
                                                     <EmptyState
                                                         title="No data for this period"
                                                         description="Try selecting a different date range or add some transactions."
-                                                        icon={<PieChart className="h-10 w-10 text-muted-foreground" />}                                                    />
+                                                        icon={<PieChart className="h-10 w-10 text-muted-foreground" />} />
                                                 )}
                                             </div>
                                         </TabsContent>
@@ -427,6 +509,9 @@ export default function DashboardPage({ rangeData, currency = "$" }: Props) {
                     bucket={currentBucket as any}
                     onSuccess={handleFormSuccess}
                 />
+
+                {/* Rollover Confirmation Dialog */}
+                {suggestRollover && <RolloverConfirmationDialog />}
             </div>
         </AppLayout>
     )
