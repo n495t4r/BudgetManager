@@ -7,6 +7,7 @@ use App\Http\Requests\IncomeSource\UpdateIncomeSourceRequest;
 use App\Models\BudgetPlan;
 use App\Models\IncomeSource;
 use App\Services\ActivityLogService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -50,18 +51,25 @@ class IncomeSourceController extends Controller
     public function store(StoreIncomeSourceRequest $request): RedirectResponse
     {
 
+        dd($request->all());
         $teamId = $request->user()->team_id;
-        $period = now()->format('Y-m');
-        $month_year = now()->format('Y-m-d');
+
+        $reqPeriod = $request->input('period')
+        ? Carbon::parse($request->input('period')): now();
+
+       if (!$reqPeriod) {
+           return back()->with('error', 'Invalid period provided.');
+       }
+
+       $period = $reqPeriod->format('Y-m');
+
         $plan = BudgetPlan::firstOrCreate(
             ['team_id' => $teamId, 'period' => $period]
         );
 
-        // dd($plan);
         $incomeSource = $request->user()->incomeSources()->create([
             'team_id' => $teamId,
             'budget_plan_id' => $plan->id,
-            'month_year'=> $month_year,
             ...$request->validated() // merge other validated fields
         ]);
 

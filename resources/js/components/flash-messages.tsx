@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Info, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 const FlashMessages = () => {
-  const { flash } = usePage().props;
+  const { flash, errors } = usePage().props;
 
   useEffect(() => {
     if (flash.success) {

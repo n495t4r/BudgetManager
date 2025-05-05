@@ -8,6 +8,7 @@ use App\Models\Bucket;
 use App\Models\BudgetPlan;
 use App\Services\ActivityLogService;
 use App\Services\BudgetService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -47,16 +48,25 @@ class BucketController extends Controller
     public function store(StoreBucketRequest $request, BudgetPlan $budgetPlan): RedirectResponse
     {
         $teamId = $request->user()->team_id;
-        $period = now()->format('Y-m');
+
+        $period = $request->input('period')
+         ? Carbon::parse($request->input('period')): now();
+
+        if (!$period) {
+            return back()->with('error', 'Invalid period provided.');
+        }
+
+        $formatPeriod = $period->format('Y-m');
+
         $plan = BudgetPlan::firstOrCreate(
-            ['team_id' => $teamId, 'period' => $period]
+            ['team_id' => $teamId, 'period' => $formatPeriod]
         );
 
         //Check if total percentage would exceed 100%
         $currentTotal = $plan->buckets()->sum("percentage");
         $newTotal = $currentTotal + $request->percentage;
         if ($newTotal > 100) {
-            return redirect()->back()->withErrors([
+            return back()->withErrors([
                 'percentage' => 'The total percentage cannot exceed 100%.',
             ]);
         }

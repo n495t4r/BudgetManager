@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useForm } from "@inertiajs/react"
+import { useForm, router } from "@inertiajs/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,9 +29,10 @@ interface IncomeFormProps {
     readonly incomeSource?: IncomeSource
     readonly currency: string
     readonly onSuccess: () => void
+    readonly period?: string
 }
 
-export default function IncomeForm({ open, onOpenChange, incomeSource, currency = "$", onSuccess }: IncomeFormProps) {
+export default function IncomeForm({ open, onOpenChange, incomeSource, currency = "₦", onSuccess, period }: IncomeFormProps) {
     const isEditing = !!incomeSource?.id
     // Form for creating/editing an income source
     const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -39,6 +40,7 @@ export default function IncomeForm({ open, onOpenChange, incomeSource, currency 
         name: incomeSource?.name || "",
         amount: incomeSource?.amount?.toString() || "",
         is_active: incomeSource?.is_active ?? true,
+        period: period || "",
     })
 
     // Handle form submission
@@ -62,7 +64,7 @@ export default function IncomeForm({ open, onOpenChange, incomeSource, currency 
                 onSuccess: onSuccessCallback,
             })
         } else {
-            post(route("income-sources.store"), {
+            router.post(route("income-sources.store"), data,{
                 preserveScroll: true,
                 onSuccess: onSuccessCallback,
             })

@@ -8,6 +8,7 @@ use App\Models\BudgetPlan;
 use App\Models\Expense;
 use App\Services\ActivityLogService;
 use App\Services\BudgetService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -46,8 +47,19 @@ class ExpenseController extends Controller
      */
     public function store(StoreExpenseRequest $request): RedirectResponse
     {
+        // dd($request->all());
+
         $teamId = $request->user()->team_id;
-        $period = $request->date->format('Y-m');
+
+        $reqPeriod = $request->input('period')
+            ? Carbon::parse($request->input('period')) : now();
+
+        if (!$reqPeriod) {
+            return back()->with('error', 'Invalid period provided.');
+        }
+
+        $period = $reqPeriod->format('Y-m');
+
         $plan = BudgetPlan::firstOrCreate(
             ['team_id' => $teamId, 'period' => $period]
         );

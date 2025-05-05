@@ -79,15 +79,13 @@ interface DashboardData {
 interface Props {
     rangeData?: DashboardData
     currency?: string
-    currentPeriod?: string
     suggestRollover?: boolean
     hasBudgetPlan?: boolean
     previousPlanId?: number
 }
 
 export default function DashboardPage({
-    rangeData, currency = "$",
-    currentPeriod, suggestRollover = false, hasBudgetPlan = false, previousPlanId
+    rangeData, currency = "₦", suggestRollover = false, hasBudgetPlan = false, previousPlanId
 }: Props) {
     // Provide default values if dashboardData is undefined
     const safeData: DashboardData = rangeData || {
@@ -109,7 +107,6 @@ export default function DashboardPage({
     const { props } = usePage();
 
     console.log('Props:', props);
-    console.log(currentPeriod);
     console.log('Suggest Rollover: ', suggestRollover);
     console.log('hasBudgetPlan:', hasBudgetPlan);
     console.log('Previous plan ID', previousPlanId);
@@ -156,6 +153,7 @@ export default function DashboardPage({
     const [currentExpense, setCurrentExpense] = useState<ExpenseRecord | undefined>(undefined)
     const [currentIncomeSource, setCurrentIncomeSource] = useState<IncomeSource | undefined>(undefined)
     const [currentBucket, setCurrentBucket] = useState<BucketSummary | undefined>(undefined)
+    const [period, setPeriod] = useState<string>(format(dateRange.from, "yyyy-MM"))
 
     // Handle applying the date filter
     const handleApplyFilter = (newDateRange: { from: Date; to: Date }) => {
@@ -175,6 +173,8 @@ export default function DashboardPage({
                 only: ["rangeData", "suggestRollover", "hasBudgetPlan"],
             },
         )
+
+        setPeriod(format(newDateRange.from, "yyyy-MM"))
     }
 
     // Handle tab change
@@ -251,24 +251,31 @@ export default function DashboardPage({
         setIsRolloverDialogOpen(true)
     }
 
-    // Format date range
-    const period = format(dateRange.from, "yyyy-MM")
+    // check if date range is from and to are the same year and month
+    const isSinglePlanFilter = dateRange.from.getFullYear() === dateRange.to.getFullYear() && dateRange.from.getMonth() === dateRange.to.getMonth()
 
     const handleRollover = () => {
-        router.post(
-            route("budget-plans.rollover"),
-            {period},
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    // Refresh the page data after rollover
-                    router.reload({
-                        only: ["rangeData", "suggestRollover", "hasBudgetPlan"],
-                        preserveScroll: true,
-                    })
+        if (isSinglePlanFilter) {
+            router.post(
+                route("budget-plans.rollover"),
+                { period },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        // Refresh the page data after rollover
+                        router.reload({
+                            only: ["rangeData", "suggestRollover", "hasBudgetPlan"],
+                            preserveScroll: true,
+                        })
+                    },
                 },
-            },
-        )
+            )
+        } else {
+            // Handle case where date range is not a single month, set props flash info
+            props.flash = {
+                error: "Please select a single month filter to roll over.",
+            }
+        }
     }
 
     const RolloverConfirmationDialog = () => (
@@ -314,11 +321,12 @@ export default function DashboardPage({
                                 buttonClassName="h-8"
                                 triggerLabel="Filter"
                             />
-
-                            <Button size="sm" className="h-8 gap-1" onClick={handleAddButtonClick}>
-                                {getAddButtonIcon()}
-                                <span className="hidden sm:inline">{getAddButtonText()}</span>
-                            </Button>
+                            {isSinglePlanFilter && hasBudgetPlan && (
+                                <Button size="sm" className="h-8 gap-1" onClick={handleAddButtonClick}>
+                                    {getAddButtonIcon()}
+                                    <span className="hidden sm:inline">{getAddButtonText()}</span>
+                                </Button>
+                            )}
                         </div>
                     </div>
 
@@ -326,7 +334,7 @@ export default function DashboardPage({
                 {/* Rollover suggestion alert */}
                 {suggestRollover && (
                     <Alert className="my-4">
-                        <AlertTitle>No budget plan for {currentPeriod}</AlertTitle>
+                        <AlertTitle>No budget plan for {period}</AlertTitle>
                         <AlertDescription className="flex items-center justify-between">
                             <span>Would you like to roll over your budget structure from the previous month?</span>
                             <div className="flex gap-2 mt-2">
@@ -488,12 +496,14 @@ export default function DashboardPage({
                 )}
                 {/* Form Modal */}
                 <ExpenseForm
+                    key={period}
                     open={isExpenseFormOpen}
                     onOpenChange={setIsExpenseFormOpen}
                     expense={currentExpense as any}
                     buckets={safeData.buckets as any}
                     currency={currency}
                     onSuccess={handleFormSuccess}
+                    period={period}
                 />
                 <IncomeForm
                     open={isIncomeFormOpen}
@@ -501,6 +511,7 @@ export default function DashboardPage({
                     incomeSource={currentIncomeSource}
                     currency={currency}
                     onSuccess={handleFormSuccess}
+                    period={period}
                 />
 
                 <BucketForm
@@ -508,6 +519,7 @@ export default function DashboardPage({
                     onOpenChange={setIsBucketFormOpen}
                     bucket={currentBucket as any}
                     onSuccess={handleFormSuccess}
+                    period={period}
                 />
 
                 {/* Rollover Confirmation Dialog */}

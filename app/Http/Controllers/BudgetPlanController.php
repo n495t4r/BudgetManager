@@ -153,8 +153,9 @@ class BudgetPlanController extends Controller
     public function rollover(Request $request): RedirectResponse
     {
         $teamId = $request->user()->team_id;
+
         $period = $request->input('period')
-         ? Carbon::parse($request->input('period')): null;
+         ? Carbon::parse($request->input('period')): now();
 
         if (!$period) {
             return back()->with('error', 'Invalid period provided.');
